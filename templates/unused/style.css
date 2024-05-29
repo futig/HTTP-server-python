@@ -1,0 +1,35 @@
+*{
+	margin: 0;
+	padding: 0;
+	top: 0;
+	left: 0;
+}
+
+.main{
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(107.64deg, #22AFFF 0%, #F153FF 99.64%);;
+
+}
+
+.text-main{
+	text-align: center;
+	position: relative;
+	top: 30%;
+	color: #FFFFFF;
+}
+
+.main h1{
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 72px;
+}
+
+.main p{
+	font-family: Roboto;
+	font-style: normal;
+	font-weight: 300;
+	font-size: 24px;
+	margin: 20;
+}

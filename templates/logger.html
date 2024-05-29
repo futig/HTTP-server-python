@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Login page</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            top: 0;
+            left: 0;
+        }
+
+        div.main{
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(107.64deg, #22AFFF 0%, #F153FF 99.64%);
+        }
+
+        div.text-main{
+            text-align: center;
+            position: relative;
+            top: 300px;
+            color: #FFFFFF;
+        }
+
+        h1 {
+            font-family: Roboto;
+            font-style: normal;
+            font-weight: normal;
+            font-size: 72px;
+        }
+
+        input {
+            font-family: Roboto;
+            font-style: normal;
+            font-weight: 400;
+            font-size: 1rem;
+            margin: 15px;
+
+            width: 20%;
+            height: calc(2.25rem + 2px);
+            padding: 0.375rem 0.75rem;
+            line-height: 1.5;
+            color: #808080;
+            background-color: #FFFFFF;
+            background-clip: padding-box;
+            border: 1px solid #bdbdbd;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+
+        div.form{
+            position: relative;
+            text-align: center;
+            top: 40%;
+        }
+
+        div.links{
+            text-align: center;
+            position: relative;
+            top: 430px;
+
+            font-family: Roboto;
+            font-style: normal;
+            font-weight: normal;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body link="#FFFFFF" vlink="#FFFFFF" alink="#FFFFFF">
+    <div class="main">
+
+        <div class="text-main">
+            <h1>Enter your name and surname</h1>
+        </div>
+
+        <div class="form">
+            <form method="post" action="logger_name">
+                <input type="text" name="name" value="Enter name">
+                <input type="text" name="surname" value="Enter lastname"> <br>
+                <input style="width: 10%; color: #212529" type="submit" name="submit" value="Send">
+            </form>
+        </div>
+
+        <div class="links">
+            <a href="index">Back to links list</a>
+        </div>
+
+    </div>
+</body>
+</html>
