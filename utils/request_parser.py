@@ -1,4 +1,4 @@
-from user_info import UserInfo
+from models.user_info import UserInfo
 
 
 def parse_request(request: str):

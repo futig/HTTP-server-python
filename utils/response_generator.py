@@ -1,4 +1,5 @@
-def _generate_headers(method, url, indexer):
+
+def _generate_headers(self, method, url, indexer):
     if method not in ["POST", "GET"]:
         return "HTTP/1.1 405 Method not allowed\n\n", 405
     if not url == "/" and not indexer.contains(url):
