@@ -27,7 +27,7 @@ class FileIndexer:
         file = Path(url)
         if file in self.URLS.keys():
             return self.URLS[file]
-        raise WrongPathException(path)
+        raise WrongPathException(file)
 
 
     def get_page_code(self, url):
