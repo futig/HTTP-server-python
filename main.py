@@ -64,8 +64,8 @@ class Server:
 
             user_info = None
             if request_dict["method"] == "POST":
-                user_info = parser.parse_request_body(request_body)
-            response, code = self.response_generator.generate_response(
+                user_info = parse_request_body(request_body)
+            response, code = generate_response(
                 request_dict, user_info
             )
 
