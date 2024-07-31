@@ -1,6 +1,7 @@
 import configparser
 import asyncio
 import os.path
+import time
 from threading import Lock
 
 import models.exceptions as exc
@@ -67,6 +68,7 @@ class Server:
             request_info, request_body = self._parser.parse_request(request)
             request_info["client"] = client
             request_info["requests-count"] = requests_count
+            keep_alive = request_info["connection"]
 
             if not self._add_client_connection(client_ip):
                 break
@@ -85,7 +87,7 @@ class Server:
         if self._debug:
             print("Connection closed")
 
-    async def run(self):
+    async def run_server(self):
         async_server = await asyncio.start_server(
             self.handle_client, self._ip_address, self._port
         )
@@ -117,4 +119,4 @@ if __name__ == "__main__":
     configuration = configparser.ConfigParser()
     configuration.read("config.ini")
     server = Server(configuration["SERVER"])
-    asyncio.run(server.run())
+    asyncio.run(server.run_server())

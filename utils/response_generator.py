@@ -12,7 +12,9 @@ class ResponseGenerator:
             request_info["method"], request_info["url"]
         )
         response.append(status_header)
-        response.append(self._generate_content_type())
+        response.append(self._generate_content_type_header())
+        # if self._caching and request_info["url"] not in {"/logger_name", "/download"}:
+        #     response.append(self._generate_caching_header(code))
         response.append(self._generate_connection_header(request_info))
         response.append("\n")
         response.append(self._generate_body(code, request_info["url"]))
@@ -25,7 +27,10 @@ class ResponseGenerator:
                   f"timeout={self._keep_alive_timeout}, "
                   f"max={max_req}\n")
 
-    def _generate_content_type(self):
+    def _generate_caching_header(self, code):
+        return ""
+
+    def _generate_content_type_header(self):
         return "Content-Type: text/html\n"
 
     def _generate_status_header(self, method, url):
