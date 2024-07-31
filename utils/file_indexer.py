@@ -43,7 +43,7 @@ class FileIndexer:
                 url = list(file.parts[levels:])
                 if not save_suffix:
                     url[-1] = file.stem
-                self.URLS[os.path.join(*url)] = file
+                self.URLS[Path(os.path.join("/", *url))] = file
 
     def index_file(self, file_path, save_suffix=False):
         file = Path(file_path)

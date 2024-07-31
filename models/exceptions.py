@@ -20,3 +20,11 @@ class WrongClientException(Exception):
 
     def __str__(self):
         return self.message
+
+
+class BadRequestException(Exception):
+    def __init__(self, request):
+        self.message = f"Could not parse request:\n{request}"
+
+    def __str__(self):
+        return self.message

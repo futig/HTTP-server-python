@@ -15,7 +15,7 @@ class Logger:
                                     method=request['method'],
                                     path=request['url'],
                                     response_code=response_code,
-                                    user_agent=request['User-Agent'],
+                                    user_agent=request['user_agent'],
                                     asctime=date_string)
         with open(self.file_path, 'a') as f:
             f.write(data_format)

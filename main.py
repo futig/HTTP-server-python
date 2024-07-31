@@ -2,14 +2,12 @@ import configparser
 import asyncio
 import os.path
 from threading import Lock
-from pathlib import Path
 
 import models.exceptions as exc
-
 from utils.file_indexer import FileIndexer
 from utils.logger import Logger
-from utils.request_parser import parse_request, parse_request_body
-from utils.response_generator import generate_response
+from utils.request_parser import RequestParser
+from utils.response_generator import ResponseGenerator
 
 
 class Server:
@@ -21,7 +19,6 @@ class Server:
 
             self._connections_limit = int(config["connections_limit"])
             self._active_connections = {}
-            self._caching = bool(config["caching"])
             self._keep_alive_timeout = int(config["keep-alive-timeout"])
             self._keep_alive_max_requests = int(config["keep-alive-max-requests"])
             self._debug = bool(config["debug"])
@@ -33,6 +30,11 @@ class Server:
                 os.path.join(os.getcwd(), config["media"])
             )
             self._mutex = Lock()
+            self._parser = RequestParser()
+            self._response_generator = ResponseGenerator(
+                self._file_indexer, int(config["keep-alive-max-requests"]),
+                bool(config["caching"]), int(config["keep-alive-timeout"])
+            )
 
         except KeyError as e:
             raise exc.ConfigFieldException(e) from None
@@ -51,29 +53,29 @@ class Server:
             print(f"Client connected: {client_ip}:{client_port}")
 
         while keep_alive and requests_count < self._keep_alive_max_requests:
-
-            data = await asyncio.wait_for(
-                reader.read(self._request_size), timeout=self._keep_alive_timeout
-            )
+            try:
+                data = await asyncio.wait_for(
+                    reader.read(self._request_size), timeout=self._keep_alive_timeout
+                )
+            except TimeoutError:
+                break
             if not data:
                 break
 
             requests_count += 1
             request = data.decode("utf-8")
-            request_dict, request_body = parse_request(request)
-            request_dict["client"] = client
+            request_info, request_body = self._parser.parse_request(request)
+            request_info["client"] = client
+            request_info["requests-count"] = requests_count
 
             if not self._add_client_connection(client_ip):
                 break
 
-            user_info = None
-            if request_dict["method"] == "POST":
-                user_info = parse_request_body(request_body)
-            response, code = generate_response(
-                request_dict, user_info, self._file_indexer
+            response, code = self._response_generator.generate_response(
+                request_info
             )
 
-            await self._logger.add_record(request_dict, code)
+            # await self._logger.add_record(request_info, code)
             writer.write(response.encode("utf-8"))
             await writer.drain()
 
