@@ -1,6 +1,8 @@
 import configparser
 import asyncio
+import os.path
 from threading import Lock
+from pathlib import Path
 
 import models.exceptions as exc
 
@@ -26,7 +28,9 @@ class Server:
 
             self._logger = Logger(config["access-log"])
             self._file_indexer = FileIndexer(
-                config["root"], config["home_page_path"], config["media"]
+                os.path.join(os.getcwd(), config["root"]),
+                os.path.join(os.getcwd(), config["home_page_path"]),
+                os.path.join(os.getcwd(), config["media"])
             )
             self._mutex = Lock()
 

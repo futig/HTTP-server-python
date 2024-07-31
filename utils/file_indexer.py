@@ -33,10 +33,14 @@ class FileIndexer:
             return template.read()
 
     def update_urls(self, root, save_suffix=False):
+        levels = len(Path(root).parts)
         stack = [root]
         while len(stack) > 0:
             for file in Path(stack.pop()).iterdir():
-                url = list(file.parts[1:])
+                if file.is_dir():
+                    stack.append(file)
+                    continue
+                url = list(file.parts[levels:])
                 if not save_suffix:
                     url[-1] = file.stem
                 self.URLS[os.path.join(*url)] = file
