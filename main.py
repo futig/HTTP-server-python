@@ -54,7 +54,7 @@ class Server:
             if not data:
                 break
 
-            request_count += 1
+            requests_count += 1
             request = data.decode("utf-8")
             request_dict, request_body = parse_request(request)
             request_dict["client"] = client
@@ -66,14 +66,14 @@ class Server:
             if request_dict["method"] == "POST":
                 user_info = parse_request_body(request_body)
             response, code = generate_response(
-                request_dict, user_info
+                request_dict, user_info, self._file_indexer
             )
 
-            await self.logger.add_record(request_dict, code)
+            await self._logger.add_record(request_dict, code)
             writer.write(response.encode("utf-8"))
             await writer.drain()
 
-        self._remove_client_coonection()
+        self._remove_client_connection(client_ip)
         writer.close()
         await writer.wait_closed()
         if self._debug:
@@ -98,17 +98,17 @@ class Server:
         self._mutex.release()
         return True
 
-    def _remove_client_coonection(self, client_ip):
-        self.mutex.acquire()
+    def _remove_client_connection(self, client_ip):
+        self._mutex.acquire()
         if client_ip in self._active_connections:
-            self.active_connections[client_ip] -= 1
-            if self.active_connections[client_ip] < 1:
-                self.active_connections.pop(client_ip)
-        self.mutex.release()
+            self._active_connections[client_ip] -= 1
+            if self._active_connections[client_ip] < 1:
+                self._active_connections.pop(client_ip)
+        self._mutex.release()
 
 
 if __name__ == "__main__":
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-    server = Server(config["SERVER"])
+    configuration = configparser.ConfigParser()
+    configuration.read("config.ini")
+    server = Server(configuration["SERVER"])
     asyncio.run(server.run())
