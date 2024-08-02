@@ -1,7 +1,8 @@
 import configparser
-import asyncio
-import os.path
+import os
+import socket
 import time
+from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 import models.exceptions as exc
@@ -17,9 +18,12 @@ class Server:
             self._port = int(config["port"])
             self._ip_address = config["ip-address"]
             self._request_size = int(config["request-size"])
+            self._used_threads = int(config["used-threads"])
 
             self._connections_limit = int(config["connections_limit"])
-            self._active_connections = {}
+            self._server = socket.create_server((self._ip_address, self._port))
+            self._server.listen(self._connections_limit)
+
             self._keep_alive_timeout = int(config["keep-alive-timeout"])
             self._keep_alive_max_requests = int(config["keep-alive-max-requests"])
             self._debug = bool(config["debug"])
@@ -36,87 +40,65 @@ class Server:
                 self._file_indexer, int(config["keep-alive-max-requests"]),
                 bool(config["caching"]), int(config["keep-alive-timeout"])
             )
-
         except KeyError as e:
             raise exc.ConfigFieldException(e) from None
-
         if self._debug:
             print("Server was initialized successfully", end="\n")
 
-    async def handle_client(self, reader, writer):
-        client = writer.get_extra_info("peername")
-        client_ip = client[1]
-        client_port = client[0]
+    def handle_client(self, client, address):
         keep_alive = True
         requests_count = 0
 
         if self._debug:
-            print(f"Client connected: {client_ip}:{client_port}")
+            print(f"Client {address[0]}:{address[1]} connected")
 
         while keep_alive and requests_count < self._keep_alive_max_requests:
-            try:
-                data = await asyncio.wait_for(
-                    reader.read(self._request_size), timeout=self._keep_alive_timeout
-                )
-            except TimeoutError:
-                break
+            print("enter loop")
+
+            data = None
+            start = time.time()
+            while not data and time.time() - start < self._keep_alive_timeout:
+                data = client.recv(self._request_size)
             if not data:
                 break
 
+            print("start decoding")
             requests_count += 1
             request = data.decode("utf-8")
             request_info, request_body = self._parser.parse_request(request)
-            request_info["client"] = client
+            request_info["client"] = address[0]
             request_info["requests-count"] = requests_count
             keep_alive = request_info["connection"]
-
-            if not self._add_client_connection(client_ip):
-                break
 
             response, code = self._response_generator.generate_response(
                 request_info
             )
 
-            # await self._logger.add_record(request_info, code)
-            writer.write(response.encode("utf-8"))
-            await writer.drain()
+            # self._logger.add_record(request_info, code)
+            client.send(response.encode("utf-8"))
+            print("sent e=response")
 
-        self._remove_client_connection(client_ip)
-        writer.close()
-        await writer.wait_closed()
+
+        client.close()
         if self._debug:
-            print("Connection closed")
+            print(f"Client {address[0]}:{address[1]} disconnected")
 
-    async def run_server(self):
-        async_server = await asyncio.start_server(
-            self.handle_client, self._ip_address, self._port
-        )
-        if self._debug:
-            print(f"Server started on {self._ip_address}:{self._port}")
-        async with async_server:
-            await async_server.serve_forever()
+    def run(self):
+        with ThreadPoolExecutor(max_workers=self._used_threads) as executor:
+            while True:
+                client, address = self._server.accept()
+                executor.submit(self.handle_client, client, address)
 
-    def _add_client_connection(self, client_ip):
-        self._mutex.acquire()
-        if client_ip not in self._active_connections:
-            self._active_connections[client_ip] = 0
-        if self._active_connections[client_ip] >= self._connections_limit:
-            return False
-        self._active_connections[client_ip] += 1
-        self._mutex.release()
-        return True
+    def stop_server(self):
+        self._server.close()
+        print("Server was closed successfully")
 
-    def _remove_client_connection(self, client_ip):
-        self._mutex.acquire()
-        if client_ip in self._active_connections:
-            self._active_connections[client_ip] -= 1
-            if self._active_connections[client_ip] < 1:
-                self._active_connections.pop(client_ip)
-        self._mutex.release()
+    def __del__(self):
+        self.stop_server()
 
 
 if __name__ == "__main__":
     configuration = configparser.ConfigParser()
     configuration.read("config.ini")
     server = Server(configuration["SERVER"])
-    asyncio.run(server.run_server())
+    server.run()

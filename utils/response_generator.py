@@ -1,3 +1,7 @@
+def _generate_content_type_header():
+    return "Content-Type: text/html\n"
+
+
 class ResponseGenerator:
     def __init__(self, indexer, keep_alive_max_requests,
                  caching, keep_alive_timeout):
@@ -12,9 +16,8 @@ class ResponseGenerator:
             request_info["method"], request_info["url"]
         )
         response.append(status_header)
-        response.append(self._generate_content_type_header())
-        # if self._caching and request_info["url"] not in {"/logger_name", "/download"}:
-        #     response.append(self._generate_caching_header(code))
+        response.append(_generate_content_type_header())
+        response.append(self._generate_caching_header(request_info["url"]))
         response.append(self._generate_connection_header(request_info))
         response.append("\n")
         response.append(self._generate_body(code, request_info["url"]))
@@ -27,11 +30,11 @@ class ResponseGenerator:
                   f"timeout={self._keep_alive_timeout}, "
                   f"max={max_req}\n")
 
-    def _generate_caching_header(self, code):
-        return ""
-
-    def _generate_content_type_header(self):
-        return "Content-Type: text/html\n"
+    def _generate_caching_header(self, url):
+        cache_condition = (not self._caching or url in
+                           {"/logger_name", "/download"})
+        cache = "no-store" if cache_condition else "public, max-age=86400"
+        return "Cache-Control: " + cache + "\n"
 
     def _generate_status_header(self, method, url):
         if method not in {"POST", "GET"}:
