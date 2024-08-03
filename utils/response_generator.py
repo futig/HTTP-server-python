@@ -1,6 +1,3 @@
-def _generate_content_type_header():
-    return "Content-Type: text/html\n"
-
 
 class ResponseGenerator:
     def __init__(self, indexer, keep_alive_max_requests,
@@ -35,6 +32,18 @@ class ResponseGenerator:
                            {"/logger_name", "/download"})
         cache = "no-store" if cache_condition else "public, max-age=86400"
         return "Cache-Control: " + cache + "\n"
+
+    def _generate_content_type_header():
+        # if file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
+        #     return 'image/jpeg'
+        # elif file_path.endswith('.png'):
+        #     return 'image/png'
+        # elif file_path.endswith('.gif'):
+        #     return 'image/gif'
+        # else:
+        #     return 'application/octet-stream'
+        return "Content-Type: text/html\n"
+
 
     def _generate_status_header(self, method, url):
         if method not in {"POST", "GET"}:

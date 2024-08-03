@@ -21,8 +21,6 @@ class Server:
             self._used_threads = int(config["used-threads"])
 
             self._connections_limit = int(config["connections_limit"])
-            self._server = socket.create_server((self._ip_address, self._port))
-            self._server.listen(self._connections_limit)
 
             self._keep_alive_timeout = int(config["keep-alive-timeout"])
             self._keep_alive_max_requests = int(config["keep-alive-max-requests"])
@@ -53,40 +51,43 @@ class Server:
             print(f"Client {address[0]}:{address[1]} connected")
 
         while keep_alive and requests_count < self._keep_alive_max_requests:
-            print("enter loop")
-
-            data = None
-            start = time.time()
-            while not data and time.time() - start < self._keep_alive_timeout:
+            try:
+                client.settimeout(self._keep_alive_timeout)
                 data = client.recv(self._request_size)
-            if not data:
+                if not data:
+                    break
+
+                requests_count += 1
+                request = data.decode("utf-8")
+                request_info, request_body = self._parser.parse_request(request)
+                request_info["client"] = address[0]
+                request_info["requests-count"] = requests_count
+                keep_alive = request_info["connection"]
+
+                response, code = self._response_generator.generate_response(
+                    request_info
+                )
+
+                # self._logger.add_record(request_info, code)
+                client.sendall(response.encode("utf-8"))
+            except socket.timeout:
+                if self._debug:
+                    print("Connection timed out")
                 break
-
-            print("start decoding")
-            requests_count += 1
-            request = data.decode("utf-8")
-            request_info, request_body = self._parser.parse_request(request)
-            request_info["client"] = address[0]
-            request_info["requests-count"] = requests_count
-            keep_alive = request_info["connection"]
-
-            response, code = self._response_generator.generate_response(
-                request_info
-            )
-
-            # self._logger.add_record(request_info, code)
-            client.send(response.encode("utf-8"))
-            print("sent e=response")
-
 
         client.close()
         if self._debug:
             print(f"Client {address[0]}:{address[1]} disconnected")
 
     def run(self):
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((self._ip_address, self._port))
+        server_socket.listen(self._connections_limit)
+
         with ThreadPoolExecutor(max_workers=self._used_threads) as executor:
             while True:
-                client, address = self._server.accept()
+                client, address = server_socket.accept()
                 executor.submit(self.handle_client, client, address)
 
     def stop_server(self):
