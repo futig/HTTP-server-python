@@ -52,7 +52,7 @@ class Server:
 
         while keep_alive and requests_count < self._keep_alive_max_requests:
             try:
-                client.settimeout(self._keep_alive_timeout)
+                # client.settimeout(self._keep_alive_timeout)
                 data = client.recv(self._request_size)
                 if not data:
                     break
@@ -89,13 +89,6 @@ class Server:
             while True:
                 client, address = server_socket.accept()
                 executor.submit(self.handle_client, client, address)
-
-    def stop_server(self):
-        self._server.close()
-        print("Server was closed successfully")
-
-    def __del__(self):
-        self.stop_server()
 
 
 if __name__ == "__main__":

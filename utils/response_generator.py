@@ -13,7 +13,7 @@ class ResponseGenerator:
             request_info["method"], request_info["url"]
         )
         response.append(status_header)
-        response.append(_generate_content_type_header())
+        response.append(self._generate_content_type_header())
         response.append(self._generate_caching_header(request_info["url"]))
         response.append(self._generate_connection_header(request_info))
         response.append("\n")
@@ -33,7 +33,7 @@ class ResponseGenerator:
         cache = "no-store" if cache_condition else "public, max-age=86400"
         return "Cache-Control: " + cache + "\n"
 
-    def _generate_content_type_header():
+    def _generate_content_type_header(sefl):
         # if file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
         #     return 'image/jpeg'
         # elif file_path.endswith('.png'):
