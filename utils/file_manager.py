@@ -1,22 +1,23 @@
 import os
+import time
 from pathlib import Path
 
 from models.exceptions import WrongPathException
 
 
-class FileIndexer:
+class FileManager:
     def __init__(self, root_folder, home_page_file_path, media):
         self.URLS = dict()
-        self.root = root_folder
-        self.media = media
+        self.root_path = root_folder
+        self.media_path = media
         self.home_page = Path(home_page_file_path)
         self.index_files()
 
     def index_files(self):
         self._check_paths_existence()
-        self.update_urls(self.root)
-        self.update_urls(self.media, save_suffix=True)
-        self.URLS[Path('\\')] = self.home_page
+        self.update_urls(self.root_path)
+        self.update_urls(self.media_path, save_suffix=True)
+        self.URLS[Path('/')] = self.home_page
 
     def contains(self, url):
         return Path(url) in self.URLS
@@ -47,7 +48,7 @@ class FileIndexer:
 
     def index_file(self, file_path, save_suffix=False):
         file = Path(file_path)
-        if file.parts[0] != self.root:
+        if file.parts[0] != self.root_path:
             return
         url = list(file.parts[1:])
         if not save_suffix:
@@ -56,7 +57,7 @@ class FileIndexer:
 
     def remove_file(self, file_path):
         file = Path(file_path)
-        if file.parts[0] != self.root:
+        if file.parts[0] != self.root_path:
             return
 
         if os.path.exists(file_path):
@@ -76,8 +77,26 @@ class FileIndexer:
         if not os.path.exists(self.home_page):
             raise WrongPathException(self.home_page)
 
-        if not os.path.exists(self.root):
-            raise WrongPathException(self.root)
+        if not os.path.exists(self.root_path):
+            raise WrongPathException(self.root_path)
 
-        if not os.path.exists(self.media):
-            raise WrongPathException(self.media)
+        if not os.path.exists(self.media_path):
+            raise WrongPathException(self.media_path)
+
+    def save_media(self, data):
+        parts = data.split(b'\r\n')
+        filename = str(time.time())
+        for part in parts:
+            if b'filename="' in part:
+                filename = part.split(b'filename="')[1].split(b'"')[0].decode()
+                break
+        file_data_index = data.index(b'\r\n\r\n') + 4
+        file_data = data[file_data_index:]
+        file_path = os.path.join(self.media_path, filename)
+        if os.path.exists(file_path):
+            filename = str(time.time()) + Path(filename).suffix
+            file_path = os.path.join(self.media_path, filename) 
+        with open(file_path, 'wb') as file:
+            file.write(file_data)
+        self.index_file(file_path, True)
+        print()

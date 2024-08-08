@@ -1,12 +1,11 @@
 import configparser
 import os
 import socket
-import time
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 import models.exceptions as exc
-from utils.file_indexer import FileIndexer
+from utils.file_manager import FileManager
 from utils.logger import Logger
 from utils.request_parser import RequestParser
 from utils.response_generator import ResponseGenerator
@@ -27,16 +26,18 @@ class Server:
             self._debug = bool(config["debug"])
 
             self._logger = Logger(config["access-log"])
-            self._file_indexer = FileIndexer(
+            self._file_manager = FileManager(
                 os.path.join(os.getcwd(), config["root"]),
                 os.path.join(os.getcwd(), config["home_page_path"]),
-                os.path.join(os.getcwd(), config["media"])
+                os.path.join(os.getcwd(), config["media"]),
             )
             self._mutex = Lock()
-            self._parser = RequestParser()
+            self._parser = RequestParser(self._file_manager)
             self._response_generator = ResponseGenerator(
-                self._file_indexer, int(config["keep-alive-max-requests"]),
-                bool(config["caching"]), int(config["keep-alive-timeout"])
+                self._file_manager,
+                int(config["keep-alive-max-requests"]),
+                bool(config["caching"]),
+                int(config["keep-alive-timeout"]),
             )
         except KeyError as e:
             raise exc.ConfigFieldException(e) from None
@@ -52,17 +53,26 @@ class Server:
 
         while keep_alive and requests_count < self._keep_alive_max_requests:
             try:
-                # client.settimeout(self._keep_alive_timeout)
+                client.settimeout(self._keep_alive_timeout)
                 data = client.recv(self._request_size)
                 if not data:
                     break
-
                 requests_count += 1
                 request = data.decode("utf-8")
-                request_info, request_body = self._parser.parse_request(request)
-                request_info["client"] = address[0]
-                request_info["requests-count"] = requests_count
-                keep_alive = request_info["connection"]
+                
+                request_info = self._parser.parse_request(request)
+                request_info.client = address[0]
+                request_info.requests_count = requests_count
+                keep_alive = bool(request_info.connection)
+
+                if request_info.method == "POST":
+                    if request_info.page_name == "download":
+                        request_body = client.recv(request_info.content_length)
+                    else:
+                        request_body = request[request_info.content_length:]
+                    self._parser.parse_request_body(
+                        request_info, request_body
+                    )
 
                 response, code = self._response_generator.generate_response(
                     request_info
@@ -70,10 +80,11 @@ class Server:
 
                 # self._logger.add_record(request_info, code)
                 client.sendall(response.encode("utf-8"))
+                
             except socket.timeout:
                 if self._debug:
                     print("Connection timed out")
-                break
+                break        
 
         client.close()
         if self._debug:
