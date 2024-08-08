@@ -99,4 +99,3 @@ class FileManager:
         with open(file_path, 'wb') as file:
             file.write(file_data)
         self.index_file(file_path, True)
-        print()

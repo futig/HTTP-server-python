@@ -2,7 +2,7 @@ class Request:
     def __init__(self, method, url, http_version, page_name, 
                  connection=None, content_length=None,
                  user_agent=None, client=None,
-                 requests_count=None, login_body=None):
+                 requests_count=None, request_body=None):
         self.method = method
         self.url = url
         self.page_name = page_name
@@ -12,5 +12,5 @@ class Request:
         self.user_agent = user_agent
         self.client = client
         self.requests_count = requests_count
-        self.login_body = login_body
+        self.request_body = request_body
 

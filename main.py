@@ -69,7 +69,7 @@ class Server:
                     if request_info.page_name == "download":
                         request_body = client.recv(request_info.content_length)
                     else:
-                        request_body = request[request_info.content_length:]
+                        request_body = request[-request_info.content_length:]
                     self._parser.parse_request_body(
                         request_info, request_body
                     )

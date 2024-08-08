@@ -62,5 +62,5 @@ class ResponseGenerator:
             page_code = self._indexer.get_page_code(request_info.url)
             page = Path(request_info.url).name
             if request_info.method == "POST" and page == "logger_name":
-                return page_code.format(request_info.login_body)
+                return page_code.format(request_info.request_body)
             return page_code
