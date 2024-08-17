@@ -9,7 +9,9 @@ class FileManager:
     def __init__(self, root_folder, home_page_file_path, media):
         self.URLS = dict()
         self.root_path = root_folder
+        self.root_path_lvl = len(Path(root_folder).parts)
         self.media_path = media
+        self.media_path_lvl = len(Path(media).parts)
         self.home_page = Path(home_page_file_path)
         self.index_files()
 
@@ -47,14 +49,23 @@ class FileManager:
                     url[-1] = file.stem
                 self.URLS[Path(os.path.join("/", *url))] = file
 
-    def index_file(self, file_path, save_suffix=False):
-        file = Path(file_path)
-        if file.parts[0] != self.root_path:
+    def index_media(self, file_path, save_suffix=False):
+        if not self.path_starts_with(file_path, self.media_path):
             return
-        url = list(file.parts[1:])
+        file = Path(file_path)
+        url = list(file.parts[self.root_path_lvl:])
         if not save_suffix:
             url[-1] = file.stem
-        self.URLS[os.path.join(*url)] = file
+        self.URLS[Path(os.path.join("/", *url))] = file
+
+    def path_starts_with(self, first, second):
+        """Checks if first path starts with second"""
+        first_parts = Path(first).parts
+        second_parts = Path(second).parts
+        for i in range(len(second_parts)):
+            if first_parts[i] != second_parts[i]:
+                return False
+        return True
 
     def remove_file(self, file_path):
         file = Path(file_path)
@@ -93,7 +104,9 @@ class FileManager:
         return res
 
     def save_media(self, data):
-        info, body = data.split(b'\r\n\r\n')
+        split = data.split(b'\r\n\r\n')
+        info = split[0]
+        body = split[1].split(b"------")[0]
         filename = str(time.time())
         for part in info.split(b'\r\n'):
             if b'filename="' in part:
@@ -105,5 +118,5 @@ class FileManager:
             file_path = os.path.join(self.media_path, filename) 
         with open(file_path, 'wb') as file:
             file.write(body)
-        self.index_file(file_path, True)
+        self.index_media(file_path, True)
     

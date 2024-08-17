@@ -59,14 +59,14 @@ class Server:
                     break
                 requests_count += 1
                 request = data.decode("utf-8")
-                
+
                 request_info = self._parser.parse_request(request)
                 request_info.client = address[0]
                 request_info.requests_count = requests_count
                 keep_alive = bool(request_info.connection)
 
                 if request_info.method == "POST":
-                    if request_info.page_name == "download":
+                    if request_info.page_name == "uploaded_image":
                         request_body = client.recv(request_info.content_length)
                         # request_body = client.recv(self._request_size)
                         # while request_body:

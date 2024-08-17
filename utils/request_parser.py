@@ -24,7 +24,7 @@ class RequestParser:
     def parse_request_body(self, request_info, body):
         if not body:
             return
-        if request_info.page_name == "download":
+        if request_info.page_name == "uploaded_image":
             self.parse_media(body)
         elif request_info.page_name == "logger_name":
             request_info.login_body = self.parse_login(body)
