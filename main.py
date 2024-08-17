@@ -85,11 +85,12 @@ class Server:
 
                 # self._logger.add_record(request_info, code)
                 client.sendall(response)
-                
+            # except Exception as e:
+            #     print(e)
             except socket.timeout:
                 if self._debug:
                     print("Connection timed out")
-                break        
+                break
 
         client.close()
         if self._debug:
