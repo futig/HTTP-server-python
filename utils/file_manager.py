@@ -86,7 +86,7 @@ class FileManager:
 
     def get_media_links(self):
         res = []
-        for url in self.URLS:
+        for url in self.URLS.keys():
             suffix = Path(url).suffix
             if suffix and suffix != ".ico":
                 res.append(url)

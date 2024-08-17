@@ -68,4 +68,12 @@ class ResponseGenerator:
             suffix = Path(request_info.url).suffix
             if request_info.method == "POST" and page == "logger_name":
                 page_code = page_code.format(request_info.login_body)
+            if page == "download":
+                page_code = page_code.format(self._generate_media_body())
             return page_code if suffix else page_code.encode("utf-8")
+        
+    def _generate_media_body(self):
+        result = []
+        for url in self._indexer.get_media_links():
+            result.append(f'<a href="{url}">{Path(url).name}</a>\n')
+        return "".join(result)
