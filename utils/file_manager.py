@@ -30,8 +30,9 @@ class FileManager:
 
     def get_page_code(self, url):
         page_path = self.get_page_path(url)
-        with open(page_path) as template:
-            return template.read()
+        method = "rb" if Path(url).suffix else "r"
+        with open(page_path, method) as content:
+            return content.read()
 
     def update_urls(self, root, save_suffix=False):
         levels = len(Path(root).parts)
@@ -42,7 +43,7 @@ class FileManager:
                     stack.append(file)
                     continue
                 url = list(file.parts[levels:])
-                if not save_suffix:
+                if not save_suffix and file.stem != "favicon":
                     url[-1] = file.stem
                 self.URLS[Path(os.path.join("/", *url))] = file
 
@@ -83,19 +84,26 @@ class FileManager:
         if not os.path.exists(self.media_path):
             raise WrongPathException(self.media_path)
 
+    def get_media_links(self):
+        res = []
+        for url in self.URLS:
+            suffix = Path(url).suffix
+            if suffix and suffix != ".ico":
+                res.append(url)
+        return res
+
     def save_media(self, data):
-        parts = data.split(b'\r\n')
+        info, body = data.split(b'\r\n\r\n')
         filename = str(time.time())
-        for part in parts:
+        for part in info.split(b'\r\n'):
             if b'filename="' in part:
                 filename = part.split(b'filename="')[1].split(b'"')[0].decode()
                 break
-        file_data_index = data.index(b'\r\n\r\n') + 4
-        file_data = data[file_data_index:]
         file_path = os.path.join(self.media_path, filename)
         if os.path.exists(file_path):
             filename = str(time.time()) + Path(filename).suffix
             file_path = os.path.join(self.media_path, filename) 
         with open(file_path, 'wb') as file:
-            file.write(file_data)
+            file.write(body)
         self.index_file(file_path, True)
+    

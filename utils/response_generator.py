@@ -14,12 +14,15 @@ class ResponseGenerator:
             request_info.method, request_info.url
         )
         response.append(status_header)
-        response.append(self._generate_content_type_header())
+        response.append(self._generate_content_type_header(
+            request_info.url, code
+        ))
         response.append(self._generate_caching_header(request_info.url))
         response.append(self._generate_connection_header(request_info))
         response.append("\n")
-        response.append(self._generate_body(code, request_info))
-        return "".join(response), code
+        content = self._generate_body(code, request_info)
+        response_encoded = "".join(response).encode("utf-8")
+        return response_encoded + content, code
 
     def _generate_connection_header(self, request_info):
         max_req = self._keep_alive_max_requests - request_info.requests_count
@@ -34,17 +37,18 @@ class ResponseGenerator:
         cache = "no-store" if cache_condition else "public, max-age=86400"
         return "Cache-Control: " + cache + "\n"
 
-    def _generate_content_type_header(sefl):
-        # if file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
-        #     return 'image/jpeg'
-        # elif file_path.endswith('.png'):
-        #     return 'image/png'
-        # elif file_path.endswith('.gif'):
-        #     return 'image/gif'
-        # else:
-        #     return 'application/octet-stream'
-        return "Content-Type: text/html\n"
-
+    def _generate_content_type_header(sefl, url, code):
+        suffix = Path(url).suffix
+        content_type = ""
+        if not suffix or code != 200:
+            content_type = "text/html"
+        if suffix in {'.jpg', '.jpeg'}:
+            content_type = 'image/jpeg'
+        elif suffix == '.png':
+            content_type = 'image/png'
+        elif suffix == '.gif':
+            content_type = 'image/gif'
+        return f"Content-Type: {content_type}\n"
 
     def _generate_status_header(self, method, url):
         if method not in {"POST", "GET"}:
@@ -61,6 +65,7 @@ class ResponseGenerator:
         if code == 200:
             page_code = self._indexer.get_page_code(request_info.url)
             page = Path(request_info.url).name
+            suffix = Path(request_info.url).suffix
             if request_info.method == "POST" and page == "logger_name":
-                return page_code.format(request_info.request_body)
-            return page_code
+                page_code = page_code.format(request_info.login_body)
+            return page_code if suffix else page_code.encode("utf-8")

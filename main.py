@@ -68,18 +68,23 @@ class Server:
                 if request_info.method == "POST":
                     if request_info.page_name == "download":
                         request_body = client.recv(request_info.content_length)
+                        # request_body = client.recv(self._request_size)
+                        # while request_body:
+                        #     body_part = client.recv(self._request_size)
+                        #     if not body_part:
+                        #         break
+                        #     request_body += body_part
                     else:
                         request_body = request[-request_info.content_length:]
                     self._parser.parse_request_body(
                         request_info, request_body
                     )
-
                 response, code = self._response_generator.generate_response(
                     request_info
                 )
 
                 # self._logger.add_record(request_info, code)
-                client.sendall(response.encode("utf-8"))
+                client.sendall(response)
                 
             except socket.timeout:
                 if self._debug:

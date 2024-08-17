@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 from models.request import Request
@@ -28,7 +27,7 @@ class RequestParser:
         if request_info.page_name == "download":
             self.parse_media(body)
         elif request_info.page_name == "logger_name":
-            request_info.request_body = self.parse_login(body)
+            request_info.login_body = self.parse_login(body)
         
     def parse_media(self, data):
         self._file_manager.save_media(data)
