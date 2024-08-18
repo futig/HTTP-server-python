@@ -95,10 +95,11 @@ class Server:
                 if e.__class__ is socket.timeout:
                     if self._debug:
                         print(f"Connection with client {address[0]} timed out")
-                    break
-                self._mutex.acquire()
-                logging.error("Server exception", exc_info=True)
-                self._mutex.release()
+                else:
+                    self._mutex.acquire()
+                    logging.error("Server exception", exc_info=True)
+                    self._mutex.release()
+                break
 
         client.close()
         if self._debug:

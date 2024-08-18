@@ -49,13 +49,11 @@ class FileManager:
                     url[-1] = file.stem
                 self.URLS[Path(os.path.join("/", *url))] = file
 
-    def index_media(self, file_path, save_suffix=False):
+    def index_media(self, file_path):
         if not self.path_starts_with(file_path, self.media_path):
             return
         file = Path(file_path)
         url = list(file.parts[self.root_path_lvl:])
-        if not save_suffix:
-            url[-1] = file.stem
         self.URLS[Path(os.path.join("/", *url))] = file
 
     def path_starts_with(self, first, second):
@@ -66,24 +64,6 @@ class FileManager:
             if first_parts[i] != second_parts[i]:
                 return False
         return True
-
-    def remove_file(self, file_path):
-        file = Path(file_path)
-        if file.parts[0] != self.root_path:
-            return
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-        url = list(file.parts[1:])
-        suffix_url = os.path.join(*url)
-        if suffix_url in self.URLS:
-            self.URLS.remove(suffix_url)
-        else:
-            url[-1] = file.stem
-            stem_url = os.path.join(*url)
-            if stem_url in self.URLS:
-                self.URLS.remove(stem_url)
 
     def _check_paths_existence(self):
         if not os.path.exists(self.home_page):
@@ -118,5 +98,5 @@ class FileManager:
             file_path = os.path.join(self.media_path, filename) 
         with open(file_path, 'wb') as file:
             file.write(body)
-        self.index_media(file_path, True)
+        self.index_media(file_path)
     
