@@ -22,6 +22,7 @@ class Server:
             self._connections_limit = int(config["connections_limit"])
 
             self._keep_alive = bool(config["keep-alive"])
+            self._keep_alive_timeout = int(config["keep-alive-timeout"])
             self._keep_alive_max_requests = int(config["keep-alive-max-requests"])
             self._debug = bool(config["debug"])
             self._file_manager = FileManager(
@@ -32,7 +33,10 @@ class Server:
             self._mutex = Lock()
             self._parser = RequestParser(self._file_manager)
             self._response_generator = ResponseGenerator(
-                self._file_manager, bool(config["caching"])
+                self._file_manager,
+                int(config["keep-alive-max-requests"]),
+                bool(config["caching"]),
+                int(config["keep-alive-timeout"]),
             )
 
             logging.basicConfig(filename=config["access-log"], filemode="w", level=logging.INFO,
@@ -49,10 +53,9 @@ class Server:
 
         if self._debug:
             print(f"Client {address[0]}:{address[1]} connected")
-
         while keep_alive and requests_count < self._keep_alive_max_requests:
             try:
-                # client.settimeout(2)
+                client.settimeout(self._keep_alive_timeout)
                 data = client.recv(self._request_size)
                 if not data:
                     break
@@ -67,12 +70,6 @@ class Server:
                 if request_info.method == "POST":
                     if request_info.page_name == "uploaded_image":
                         request_body = client.recv(request_info.content_length)
-                        # request_body = client.recv(self._request_size)
-                        # while request_body:
-                        #     body_part = client.recv(self._request_size)
-                        #     if not body_part:
-                        #         break
-                        #     request_body += body_part
                     else:
                         request_body = request[-request_info.content_length:]
                     self._parser.parse_request_body(
@@ -89,13 +86,13 @@ class Server:
 
                 client.sendall(response)
             except Exception as e:
-                # if e.__class__ is socket.timeout:
-                #     if self._debug:
-                #         print(f"Connection with client {address[0]} timed out")
-                # else:
-                self._mutex.acquire()
-                logging.error("Server exception", exc_info=True)
-                self._mutex.release()
+                if e.__class__ is socket.timeout:
+                    if self._debug:
+                        print(f"Connection with client {address[0]}:{address[1]} timed out")
+                else:
+                    self._mutex.acquire()
+                    logging.error("Server exception", exc_info=True)
+                    self._mutex.release()
                 break
 
         client.close()
@@ -111,11 +108,10 @@ class Server:
         with ThreadPoolExecutor(max_workers=self._used_threads) as executor:
             while True:
                 client, address = server_socket.accept()
-                self.set_keepalive_linux(client)
+                self.set_keepalive(client)
                 executor.submit(self.handle_client, client, address)
 
-    def set_keepalive_linux(self, sock, after_idle_sec=1, interval_sec=3, max_fails=5):
-        """Настройка TCP keepalive на открытом сокете для Linux."""
+    def set_keepalive(self, sock, after_idle_sec=1, interval_sec=3, max_fails=5):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, after_idle_sec)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, interval_sec)
