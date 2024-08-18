@@ -1,12 +1,12 @@
 import configparser
 import os
 import socket
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 import models.exceptions as exc
 from utils.file_manager import FileManager
-from utils.logger import Logger
 from utils.request_parser import RequestParser
 from utils.response_generator import ResponseGenerator
 
@@ -24,8 +24,6 @@ class Server:
             self._keep_alive_timeout = int(config["keep-alive-timeout"])
             self._keep_alive_max_requests = int(config["keep-alive-max-requests"])
             self._debug = bool(config["debug"])
-
-            self._logger = Logger(config["access-log"])
             self._file_manager = FileManager(
                 os.path.join(os.getcwd(), config["root"]),
                 os.path.join(os.getcwd(), config["home_page_path"]),
@@ -39,6 +37,10 @@ class Server:
                 bool(config["caching"]),
                 int(config["keep-alive-timeout"]),
             )
+
+            logging.basicConfig(filename=config["access-log"], filemode="w", level=logging.INFO,
+                                format="%(levelname)s: [%(asctime)s] %(message)s")
+
         except KeyError as e:
             raise exc.ConfigFieldException(e) from None
         if self._debug:
@@ -82,15 +84,21 @@ class Server:
                 response, code = self._response_generator.generate_response(
                     request_info
                 )
+                self._mutex.acquire()
+                logging.info(f"{request_info.client} - {request_info.method} "
+                             f"{request_info.url} {code} "
+                             f"{request_info.user_agent}")
+                self._mutex.release()
 
-                # self._logger.add_record(request_info, code)
                 client.sendall(response)
-            # except Exception as e:
-            #     print(e)
-            except socket.timeout:
-                if self._debug:
-                    print("Connection timed out")
-                break
+            except Exception as e:
+                if e.__class__ is socket.timeout:
+                    if self._debug:
+                        print(f"Connection with client {address[0]} timed out")
+                    break
+                self._mutex.acquire()
+                logging.error("Server exception", exc_info=True)
+                self._mutex.release()
 
         client.close()
         if self._debug:
