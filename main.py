@@ -52,7 +52,7 @@ class Server:
 
         while keep_alive and requests_count < self._keep_alive_max_requests:
             try:
-                client.settimeout(2)
+                # client.settimeout(2)
                 data = client.recv(self._request_size)
                 if not data:
                     break
@@ -89,13 +89,13 @@ class Server:
 
                 client.sendall(response)
             except Exception as e:
-                if e.__class__ is socket.timeout:
-                    if self._debug:
-                        print(f"Connection with client {address[0]} timed out")
-                else:
-                    self._mutex.acquire()
-                    logging.error("Server exception", exc_info=True)
-                    self._mutex.release()
+                # if e.__class__ is socket.timeout:
+                #     if self._debug:
+                #         print(f"Connection with client {address[0]} timed out")
+                # else:
+                self._mutex.acquire()
+                logging.error("Server exception", exc_info=True)
+                self._mutex.release()
                 break
 
         client.close()
