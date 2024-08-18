@@ -1,12 +1,9 @@
 from pathlib import Path
 
 class ResponseGenerator:
-    def __init__(self, indexer, keep_alive_max_requests,
-                 caching, keep_alive_timeout):
+    def __init__(self, indexer, caching):
         self._indexer = indexer
         self._caching = caching
-        self._keep_alive_timeout = keep_alive_timeout
-        self._keep_alive_max_requests = keep_alive_max_requests
 
     def generate_response(self, request_info):
         response = []
@@ -25,11 +22,8 @@ class ResponseGenerator:
         return response_encoded + content, code
 
     def _generate_connection_header(self, request_info):
-        max_req = self._keep_alive_max_requests - request_info.requests_count
         return "Connection: close\n" if not request_info.connection \
-            else (f"Connection: keep-alive\nKeep-Alive: "
-                  f"timeout={self._keep_alive_timeout}, "
-                  f"max={max_req}\n")
+            else "Connection: keep-alive"
 
     def _generate_caching_header(self, url):
         cache_condition = (not self._caching or url in
