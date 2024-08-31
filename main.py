@@ -60,7 +60,8 @@ class Server:
                 if not data:
                     break
                 requests_count += 1
-                request = data.decode("utf-8")
+                data = data.split(b"\r\n\r\n")
+                request = data[0].decode("utf-8")
 
                 request_info = self._parser.parse_request(request)
                 request_info.client = address[0]
@@ -69,9 +70,12 @@ class Server:
 
                 if request_info.method == "POST":
                     if request_info.page_name == "uploaded_image":
-                        request_body = client.recv(request_info.content_length)
+                        arr = bytearray(data[1])
+                        if len(arr) < request_info.content_length:
+                            additional = client.recv(request_info.content_length)
+                            request_body = data[1] + additional
                     else:
-                        request_body = request[-request_info.content_length:]
+                        request_body = data[1].decode("utf-8")
                     self._parser.parse_request_body(
                         request_info, request_body
                     )

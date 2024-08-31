@@ -86,8 +86,7 @@ class FileManager:
     def save_media(self, data):
         split = data.split(b'\r\n\r\n')
         info = split[0]
-        body = split[1].split(b"------")[0]
-        filename = str(time.time())
+        body = split[1]
         for part in info.split(b'\r\n'):
             if b'filename="' in part:
                 filename = part.split(b'filename="')[1].split(b'"')[0].decode()
