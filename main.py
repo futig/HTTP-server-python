@@ -71,9 +71,10 @@ class Server:
                 if request_info.method == "POST":
                     if request_info.page_name == "uploaded_image":
                         arr = bytearray(data[1])
+                        additional = b""
                         if len(arr) < request_info.content_length:
                             additional = client.recv(request_info.content_length)
-                            request_body = data[1] + additional
+                        request_body = data[1] + additional
                     else:
                         request_body = data[1].decode("utf-8")
                     self._parser.parse_request_body(
