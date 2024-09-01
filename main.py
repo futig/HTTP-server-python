@@ -60,20 +60,29 @@ class Server:
                 if not data:
                     break
                 requests_count += 1
-                data = data.split(b"\r\n\r\n")
+                data = data.split(b"\r\n\r\n", 1)
                 request = data[0].decode("utf-8")
 
                 request_info = self._parser.parse_request(request)
                 request_info.client = address[0]
                 request_info.requests_count = requests_count
-                keep_alive = keep_alive and bool(request_info.connection)
+                keep_alive = (keep_alive and bool(request_info.connection)
+                              and request_info.method != "POST")
 
                 if request_info.method == "POST":
                     if request_info.page_name == "uploaded_image":
                         arr = bytearray(data[1])
                         additional = b""
                         if len(arr) < request_info.content_length:
-                            additional = client.recv(request_info.content_length)
+                            try:
+                                additional = client.recv(self._request_size)
+                                while additional:
+                                    body_part = client.recv(self._request_size)
+                                    if not body_part:
+                                        break
+                                    additional += body_part
+                            except socket.timeout:
+                                pass
                         request_body = data[1] + additional
                     else:
                         request_body = data[1].decode("utf-8")
@@ -91,10 +100,7 @@ class Server:
 
                 client.sendall(response)
             except Exception as e:
-                if e.__class__ is socket.timeout:
-                    if self._debug:
-                        print(f"Connection with client {address[0]}:{address[1]} timed out")
-                else:
+                if e.__class__ is not socket.timeout:
                     self._mutex.acquire()
                     logging.error("Server exception", exc_info=True)
                     self._mutex.release()
@@ -113,7 +119,8 @@ class Server:
         with ThreadPoolExecutor(max_workers=self._used_threads) as executor:
             while True:
                 client, address = server_socket.accept()
-                self.set_keepalive(client)
+                if self._keep_alive:
+                    self.set_keepalive(client)
                 executor.submit(self.handle_client, client, address)
 
     def set_keepalive(self, sock, after_idle_sec=1, interval_sec=3, max_fails=5):

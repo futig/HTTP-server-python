@@ -27,10 +27,12 @@ class ResponseGenerator:
 
     def _generate_connection_header(self, request_info):
         max_req = self._keep_alive_max_requests - request_info.requests_count
-        return "Connection: close\n" if not request_info.connection \
-            else (f"Connection: keep-alive\nKeep-Alive: "
-                  f"timeout={self._keep_alive_timeout}, "
-                  f"max={max_req}\n")
+        if not request_info.connection or request_info.method == "POST":
+            return "Connection: close\n"
+        else:
+            return (f"Connection: keep-alive\nKeep-Alive: "
+                    f"timeout={self._keep_alive_timeout}, "
+                    f"max={max_req}\n")
 
     def _generate_caching_header(self, url):
         cache_condition = (not self._caching or url in
@@ -72,7 +74,7 @@ class ResponseGenerator:
             if page == "download":
                 page_code = page_code.format(self._generate_media_body())
             return page_code if suffix else page_code.encode("utf-8")
-        
+
     def _generate_media_body(self):
         result = []
         for url in self._indexer.get_media_links():
