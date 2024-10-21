@@ -4,6 +4,7 @@ import socket
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
+import time
 
 import models.exceptions as exc
 from utils.file_manager import FileManager
@@ -17,9 +18,13 @@ class Server:
             self._port = int(config["port"])
             self._ip_address = config["ip-address"]
             self._request_size = int(config["request-size"])
-            self._used_threads = int(config["used-threads"])
 
-            self._connections_limit = int(config["connections_limit"])
+            self._connections_limit = int(config["connections-limit"])
+            self._client_connections_limit = int(config["client-connections-limit"])
+            self._active_connections = {}
+
+            self._too_many_requests_span = int(config["too-many-requests-span"])
+            self._too_many_requests_limit = int(config["too-many-requests-limit"])
 
             self._keep_alive = bool(config["keep-alive"])
             self._keep_alive_timeout = int(config["keep-alive-timeout"])
@@ -27,7 +32,7 @@ class Server:
             self._debug = bool(config["debug"])
             self._file_manager = FileManager(
                 os.path.join(os.getcwd(), config["root"]),
-                os.path.join(os.getcwd(), config["home_page_path"]),
+                os.path.join(os.getcwd(), config["home-page-path"]),
                 os.path.join(os.getcwd(), config["media"]),
             )
             self._mutex = Lock()
@@ -35,7 +40,8 @@ class Server:
             self._response_generator = ResponseGenerator(
                 self._file_manager,
                 int(config["keep-alive-max-requests"]),
-                bool(config["caching"]),
+                bool(config["browser-caching"]),
+                bool(config["server-caching"]),
                 int(config["keep-alive-timeout"]),
             )
 
@@ -50,6 +56,17 @@ class Server:
     def handle_client(self, client, address):
         keep_alive = self._keep_alive
         requests_count = 0
+        ip = address[0]
+        
+        self._mutex.acquire()
+        if ip not in self._active_connections:
+            self._active_connections[ip] = [0, []]
+        client_connections = self._active_connections[ip]
+        tmr =  self._too_many_requests(client_connections[1])
+        self._mutex.release()
+
+        if client_connections[0] > self._client_connections_limit:
+            return 
 
         if self._debug:
             print(f"Client {address[0]}:{address[1]} connected")
@@ -64,6 +81,7 @@ class Server:
                 request = data[0].decode("utf-8")
 
                 request_info = self._parser.parse_request(request)
+                request_info.too_many_requests = tmr
                 request_info.client = address[0]
                 request_info.requests_count = requests_count
                 keep_alive = (keep_alive and bool(request_info.connection)
@@ -116,18 +134,28 @@ class Server:
         server_socket.bind((self._ip_address, self._port))
         server_socket.listen(self._connections_limit)
 
-        with ThreadPoolExecutor(max_workers=self._used_threads) as executor:
+        with ThreadPoolExecutor(max_workers=self._connections_limit) as executor:
             while True:
                 client, address = server_socket.accept()
+                
                 if self._keep_alive:
-                    self.set_keepalive(client)
+                    self._set_keepalive(client)
                 executor.submit(self.handle_client, client, address)
 
-    def set_keepalive(self, sock, after_idle_sec=1, interval_sec=3, max_fails=5):
+    def _set_keepalive(self, sock, after_idle_sec=1, interval_sec=3, max_fails=5):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, after_idle_sec)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, interval_sec)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, max_fails)
+        
+    def _too_many_requests(self, requests):
+        self._mutex.acquire()
+        while len(requests) > 0 and requests[0] - time.time > self._too_many_requests_span:
+            requests.pop(0)
+        res = len(requests) >= self._too_many_requests_limit
+        self._mutex.release()
+        return res
+            
 
 
 if __name__ == "__main__":
