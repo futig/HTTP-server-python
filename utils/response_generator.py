@@ -3,29 +3,37 @@ from pathlib import Path
 
 class ResponseGenerator:
     def __init__(self, indexer, keep_alive_max_requests,
-                 browser_caching, server_caching, keep_alive_timeout):
+                 browser_caching, cash_list, keep_alive_timeout):
         self._indexer = indexer
         self._browser_caching = browser_caching
-        self._server_caching = server_caching
+        self._server_cash_list = cash_list
         self._keep_alive_timeout = keep_alive_timeout
         self._keep_alive_max_requests = keep_alive_max_requests
 
     def generate_response(self, request_info):
+        url = request_info.url
+        if (self._server_cash_list and 
+            self._server_cash_list.contains(url)):
+            return self._server_cash_list.get(url)
+        
         response = []
         status_header, code = self._generate_status_header(
-            request_info.method, request_info.url, request_info.too_many_requests
+            request_info.method, url, request_info.too_many_requests
         )
         response.append(status_header)
         response.append(self._generate_content_type_header(
-            request_info.url, code
+            url, code
         ))
-        response.append(self._generate_caching_header(request_info.url))
+        response.append(self._generate_caching_header(url))
         response.append(self._generate_connection_header(request_info))
         content = self._generate_body(code, request_info)
         response.append(self._generate_content_length_header(content))
         response.append("\n")
         response_encoded = "".join(response).encode("utf-8")
-        return response_encoded + content, code
+        result = response_encoded + content
+        if (self._server_cash_list and url not in {"/logger_name", "/download"}):
+            self._server_cash_list.put(url, result, code)
+        return result, code
 
     def _generate_connection_header(self, request_info):
         max_req = self._keep_alive_max_requests - request_info.requests_count

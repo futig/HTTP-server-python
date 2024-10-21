@@ -10,6 +10,7 @@ import models.exceptions as exc
 from utils.file_manager import FileManager
 from utils.request_parser import RequestParser
 from utils.response_generator import ResponseGenerator
+from utils.page_caching import CashList
 
 
 class Server:
@@ -35,13 +36,17 @@ class Server:
                 os.path.join(os.getcwd(), config["home-page-path"]),
                 os.path.join(os.getcwd(), config["media"]),
             )
+            
+            cash_size = int(config["server-cash-size"])
+            self._server_cash_list = CashList(cash_size) if cash_size > 0 else None
+                
             self._mutex = Lock()
             self._parser = RequestParser(self._file_manager)
             self._response_generator = ResponseGenerator(
                 self._file_manager,
                 int(config["keep-alive-max-requests"]),
                 bool(config["browser-caching"]),
-                bool(config["server-caching"]),
+                self._server_cash_list,
                 int(config["keep-alive-timeout"]),
             )
 
@@ -70,8 +75,6 @@ class Server:
 
         if client_connections[0] > self._client_connections_limit:
             exit = True 
-            
-        print(client_connections[0])
 
         if self._debug:
             print(f"Client {address[0]}:{address[1]} connected")
@@ -150,11 +153,6 @@ class Server:
                 if self._keep_alive:
                     self._set_keepalive(client)
                 executor.submit(self.handle_client, client, address)
-        # while True:
-        #     client, address = server_socket.accept()
-        #     if self._keep_alive:
-        #         self._set_keepalive(client)
-        #     self.handle_client(client, address)
             
     def _set_keepalive(self, sock, after_idle_sec=1, interval_sec=3, max_fails=5):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
