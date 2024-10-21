@@ -69,11 +69,11 @@ class ResponseGenerator:
 
     def _generate_body(self, code, request_info):
         if code == 404:
-            return "<h1>404</h1><p>Not found</p>\n"
+            return "<h1>404</h1><p>Not found</p>\n".encode("utf-8")
         if code == 405:
-            return "<h1>405</h1><p>Method not allowed</p>\n"
+            return "<h1>405</h1><p>Method not allowed</p>\n".encode("utf-8")
         if code == 429:
-            return "<h1>429</h1><p>Too many requests</p>\n"
+            return "<h1>429</h1><p>Too many requests</p>\n".encode("utf-8")
         if code == 200:
             page_code = self._indexer.get_page_code(request_info.url)
             page = Path(request_info.url).name
