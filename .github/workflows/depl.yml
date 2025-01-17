@@ -1,4 +1,4 @@
-name: server-werkflow
+name: server-workflow
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   lintest:
-    runs-on: ubuntu:22.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
         isort-options: "-w 100"
 
   build:
-    runs-on: ubuntu:22.04
+    runs-on: ubuntu-22.04
     needs: lintest
     steps:
     - name: Checkout
@@ -34,12 +34,15 @@ jobs:
       with:
         python-version: '3.12' 
 
+    - name: Set up virtual environment
+      run: python -m venv venv && source venv/bin/activate
+
     - name: Run tests
       run: python main.py
 
   tests:
     needs: [lintest, build]
-    runs-on: ubuntu:22.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -48,6 +51,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.12' 
+
+    - name: Set up virtual environment
+      run: python -m venv venv && source venv/bin/activate
 
     - name: Run tests
       run: python run_tests.py
