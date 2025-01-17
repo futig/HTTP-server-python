@@ -50,7 +50,7 @@ class Server:
                 int(config["keep-alive-timeout"]),
             )
 
-            with open(config["access-log"], "w"):
+            with open(config["access-log"], "w+"):
                 pass
             logging.basicConfig(
                 filename=config["access-log"],
