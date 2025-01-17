@@ -20,7 +20,7 @@ jobs:
 
   build:
     runs-on: ubuntu-22.04
-    needs: lintest
+    needs: lint
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
       run: python main.py
 
   tests:
-    needs: [lintest, build]
+    needs: [lint, build]
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
