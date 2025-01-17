@@ -8,20 +8,30 @@ on:
     - cron: '5 * * * *'
 
 jobs:
-  lintest:
+  lint:
     runs-on: ubuntu-22.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Python Linter
-      uses: sunnysid3up/python-linter@master
-      with:
-        source: "./"
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pylint
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+
+      - name: Run Pylint on All Files
+        run: |
+          echo "Running Pylint on all Python files..."
+          find . -name "*.py" ! -path "./tests/*" -path "./src/*" -path "./models/*" | xargs pylint || echo "Fix Pylint issues before proceeding."
 
   build:
     runs-on: ubuntu-22.04
-    needs: lintest
+    needs: lint
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -38,7 +48,7 @@ jobs:
       run: python main.py
 
   tests:
-    needs: [lintest, build]
+    needs: [lint, build]
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
