@@ -2,8 +2,14 @@ from pathlib import Path
 
 
 class ResponseGenerator:
-    def __init__(self, indexer, keep_alive_max_requests,
-                 browser_caching, cash_list, keep_alive_timeout):
+    def __init__(
+        self,
+        indexer,
+        keep_alive_max_requests,
+        browser_caching,
+        cash_list,
+        keep_alive_timeout,
+    ):
         self._indexer = indexer
         self._browser_caching = browser_caching
         self._server_cash_list = cash_list
@@ -12,18 +18,15 @@ class ResponseGenerator:
 
     def generate_response(self, request_info):
         url = request_info.url
-        if (self._server_cash_list and 
-            self._server_cash_list.contains(url)):
+        if self._server_cash_list and self._server_cash_list.contains(url):
             return self._server_cash_list.get(url)
-        
+
         response = []
         status_header, code = self._generate_status_header(
             request_info.method, url, request_info.too_many_requests
         )
         response.append(status_header)
-        response.append(self._generate_content_type_header(
-            url, code
-        ))
+        response.append(self._generate_content_type_header(url, code))
         response.append(self._generate_caching_header(url))
         response.append(self._generate_connection_header(request_info))
         content = self._generate_body(code, request_info)
@@ -31,7 +34,7 @@ class ResponseGenerator:
         response.append("\n")
         response_encoded = "".join(response).encode("utf-8")
         result = response_encoded + content
-        if (self._server_cash_list and url not in {"/logger_name", "/download"}):
+        if self._server_cash_list and url not in {"/logger_name", "/download"}:
             self._server_cash_list.put(url, result, code)
         return result, code
 
@@ -40,16 +43,20 @@ class ResponseGenerator:
         if not request_info.connection or request_info.method == "POST":
             return "Connection: close\n"
         else:
-            return (f"Connection: keep-alive\nKeep-Alive: "
-                    f"timeout={self._keep_alive_timeout}, "
-                    f"max={max_req}\n")
+            return (
+                f"Connection: keep-alive\nKeep-Alive: "
+                f"timeout={self._keep_alive_timeout}, "
+                f"max={max_req}\n"
+            )
 
     def _generate_content_length_header(self, content):
         return f"Content-Length: {len(content)}\n"
 
     def _generate_caching_header(self, url):
-        cache_condition = (not self._browser_caching or url in
-                           {"/logger_name", "/download"})
+        cache_condition = not self._browser_caching or url in {
+            "/logger_name",
+            "/download",
+        }
         cache = "no-store" if cache_condition else "public, max-age=86400"
         return "Cache-Control: " + cache + "\n"
 
@@ -58,12 +65,12 @@ class ResponseGenerator:
         content_type = ""
         if not suffix or code != 200:
             content_type = "text/html"
-        if suffix in {'.jpg', '.jpeg'}:
-            content_type = 'image/jpeg'
-        elif suffix == '.png':
-            content_type = 'image/png'
-        elif suffix == '.gif':
-            content_type = 'image/gif'
+        if suffix in {".jpg", ".jpeg"}:
+            content_type = "image/jpeg"
+        elif suffix == ".png":
+            content_type = "image/png"
+        elif suffix == ".gif":
+            content_type = "image/gif"
         return f"Content-Type: {content_type}\n"
 
     def _generate_status_header(self, method, url, tmr):

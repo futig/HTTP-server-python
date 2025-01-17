@@ -1,7 +1,7 @@
 import socket
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', 5000))
+sock.connect(("localhost", 5000))
 
 # test index page
 with open("./tests/test_requests/index_request.txt", "r") as f:

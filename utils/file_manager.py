@@ -19,7 +19,7 @@ class FileManager:
         self._check_paths_existence()
         self.update_urls(self.root_path)
         self.update_urls(self.media_path, save_suffix=True)
-        self.URLS[Path('/')] = self.home_page
+        self.URLS[Path("/")] = self.home_page
 
     def contains(self, url):
         return Path(url) in self.URLS
@@ -53,7 +53,7 @@ class FileManager:
         if not self.path_starts_with(file_path, self.media_path):
             return
         file = Path(file_path)
-        url = list(file.parts[self.root_path_lvl:])
+        url = list(file.parts[self.root_path_lvl :])
         self.URLS[Path(os.path.join("/", *url))] = file
 
     def path_starts_with(self, first, second):
@@ -84,18 +84,17 @@ class FileManager:
         return res
 
     def save_media(self, data):
-        split = data.split(b'\r\n\r\n')
+        split = data.split(b"\r\n\r\n")
         info = split[0]
         body = split[1]
-        for part in info.split(b'\r\n'):
+        for part in info.split(b"\r\n"):
             if b'filename="' in part:
                 filename = part.split(b'filename="')[1].split(b'"')[0].decode()
                 break
         file_path = os.path.join(self.media_path, filename)
         if os.path.exists(file_path):
             filename = str(time.time()) + Path(filename).suffix
-            file_path = os.path.join(self.media_path, filename) 
-        with open(file_path, 'wb') as file:
+            file_path = os.path.join(self.media_path, filename)
+        with open(file_path, "wb") as file:
             file.write(body)
         self.index_media(file_path)
-    

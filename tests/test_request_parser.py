@@ -24,7 +24,7 @@ class TestRequestParser(unittest.TestCase):
     def test_parse_request_body_with_image(self):
         request_info = MagicMock()
         request_info.page_name = "uploaded_image"
-        body = b"--boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"test.jpg\"\r\n\r\nimage data\r\n--boundary--"
+        body = b'--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\n\r\nimage data\r\n--boundary--'
 
         self.parser.parse_request_body(request_info, body)
         self.file_manager.save_media.assert_called_once_with(body)
@@ -47,5 +47,5 @@ class TestRequestParser(unittest.TestCase):
         self.assertFalse(request_info.login_body)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

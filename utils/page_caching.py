@@ -34,5 +34,3 @@ class CashList:
         page = Page(url, page_code, response_code)
         self.pages[url] = page
         self.queue.put(page)
-        
-

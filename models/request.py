@@ -1,9 +1,18 @@
 class Request:
-    def __init__(self, method, url, http_version, page_name, 
-                 connection=None, content_length=None,
-                 user_agent=None, client=None,
-                 requests_count=None, request_body=None,
-                 too_many_requests=None):
+    def __init__(
+        self,
+        method,
+        url,
+        http_version,
+        page_name,
+        connection=None,
+        content_length=None,
+        user_agent=None,
+        client=None,
+        requests_count=None,
+        request_body=None,
+        too_many_requests=None,
+    ):
         self.method = method
         self.url = url
         self.page_name = page_name
@@ -15,4 +24,3 @@ class Request:
         self.requests_count = requests_count
         self.request_body = request_body
         self.too_many_requests = request_body
-
