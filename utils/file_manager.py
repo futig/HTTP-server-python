@@ -14,8 +14,7 @@ class FileManager:
         self.media_path_lvl = len(Path(media).parts)
         self.home_page = Path(home_page_file_path)
         self.index_files()
-        if not os.path.exists(media_path):
-            os.mkdir(media_path)
+            
 
     def index_files(self):
         self._check_paths_existence()
@@ -75,7 +74,8 @@ class FileManager:
             raise WrongPathException(self.root_path)
 
         if not os.path.exists(self.media_path):
-            raise WrongPathException(self.media_path)
+            os.mkdir(self.media_path)
+            # raise WrongPathException(self.media_path)
 
     def get_media_links(self):
         res = []
