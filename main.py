@@ -50,8 +50,8 @@ class Server:
                 int(config["keep-alive-timeout"]),
             )
 
-            with open(config["access-log"], "w+"):
-                pass
+            if os.path.exists("logs"):
+                os.mkdir(config["logs"])
             logging.basicConfig(
                 filename=config["access-log"],
                 filemode="w",
