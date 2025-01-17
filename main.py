@@ -51,7 +51,7 @@ class Server:
             )
 
             if not os.path.exists("logs"):
-                os.mkdir(config["logs"])
+                os.mkdir("logs")
             logging.basicConfig(
                 filename=config["access-log"],
                 filemode="w",
