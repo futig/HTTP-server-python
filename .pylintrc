@@ -1,0 +1,13 @@
+[pylint]
+ignore=
+    run_test.py,
+    client.py,
+    test_file_manager.py,
+    test_request_parser.py,
+    exceptions.py,
+    request.py,
+    user_info.py,
+disable=
+    import-error,
+    missing-module-docstring,
+    missing-function-docstring
