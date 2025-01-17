@@ -50,7 +50,7 @@ class Server:
                 int(config["keep-alive-timeout"]),
             )
 
-            if os.path.exists("logs"):
+            if not os.path.exists("logs"):
                 os.mkdir(config["logs"])
             logging.basicConfig(
                 filename=config["access-log"],
