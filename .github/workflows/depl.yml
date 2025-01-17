@@ -48,7 +48,7 @@ jobs:
   #     run: python main.py
 
   tests:
-    needs: [lint, build]
+    needs: lint
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
