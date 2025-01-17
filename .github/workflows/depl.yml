@@ -8,17 +8,20 @@ on:
     - cron: '5 * * * *'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+  lintest:
+    runs-on: ubuntu-22.04
     steps:
-      - run: python3 -mpip install flake8-bugbear
-      - uses: advanced-security/python-lint-code-scanning-action@v1
-        with:
-          linter: flake8
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Python Linter
+      uses: sunnysid3up/python-linter@master
+      with:
+        source: "./"
 
   build:
     runs-on: ubuntu-22.04
-    needs: lint
+    needs: lintest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -35,7 +38,7 @@ jobs:
       run: python main.py
 
   tests:
-    needs: [lint, build]
+    needs: [lintest, build]
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
