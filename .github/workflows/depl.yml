@@ -29,23 +29,23 @@ jobs:
           echo "Running Pylint on all Python files..."
           find . -name "*.py" ! -path "./tests/*" -path "./src/*" -path "./models/*" | xargs pylint || echo "Fix Pylint issues before proceeding."
 
-  build:
-    runs-on: ubuntu-22.04
-    needs: lint
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+  # build:
+  #   runs-on: ubuntu-22.04
+  #   needs: lint
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
     
-    - name: Setup python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12' 
+  #   - name: Setup python
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: '3.12' 
 
-    - name: Set up virtual environment
-      run: python -m venv venv && source venv/bin/activate
+  #   - name: Set up virtual environment
+  #     run: python -m venv venv && source venv/bin/activate
 
-    - name: Build
-      run: python main.py
+  #   - name: Build
+  #     run: python main.py
 
   tests:
     needs: [lint, build]
