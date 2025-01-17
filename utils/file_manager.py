@@ -14,6 +14,8 @@ class FileManager:
         self.media_path_lvl = len(Path(media).parts)
         self.home_page = Path(home_page_file_path)
         self.index_files()
+        if not os.path.exists(media_path):
+            os.mkdir(media_path)
 
     def index_files(self):
         self._check_paths_existence()
