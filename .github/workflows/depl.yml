@@ -27,24 +27,6 @@ jobs:
           echo "Running Pylint on all Python files..."
           find . -name "*.py" ! -path "./tests/*" -path "./src/*" -path "./models/*" | xargs pylint || echo "Fix Pylint issues before proceeding."
 
-  # build:
-  #   runs-on: ubuntu-22.04
-  #   needs: lint
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
-    
-  #   - name: Setup python
-  #     uses: actions/setup-python@v5
-  #     with:
-  #       python-version: '3.12' 
-
-  #   - name: Set up virtual environment
-  #     run: python -m venv venv && source venv/bin/activate
-
-  #   - name: Build
-  #     run: python main.py
-
   tests:
     needs: lint
     runs-on: ubuntu-22.04
@@ -62,3 +44,25 @@ jobs:
 
     - name: Run tests
       run: python run_tests.py
+    
+   docker:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
