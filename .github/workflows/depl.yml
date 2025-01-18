@@ -79,7 +79,7 @@ jobs:
       
       - name: Connect to Server and Deploy
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/fiitBM ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
           sudo docker stop my-container || true
           sudo docker rm my-container || true
