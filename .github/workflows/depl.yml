@@ -80,6 +80,7 @@ jobs:
       - name: Connect to Server and Deploy
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/fiitBM ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
           sudo docker stop my-container || true
           sudo docker rm my-container || true
