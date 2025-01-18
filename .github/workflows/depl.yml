@@ -66,3 +66,23 @@ jobs:
         with:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH }}" > ~/.ssh/fiitBM
+          chmod 600 ~/.ssh/fiitBM
+      
+      - name: Connect to Server and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
+          docker stop my-container || true
+          docker rm my-container || true
+          docker run -d --name my-container -p 5000:5000 ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
+          EOF
+      
