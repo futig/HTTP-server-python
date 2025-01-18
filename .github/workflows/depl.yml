@@ -81,9 +81,9 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/fiitBM ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           echo '${{ secrets.DOCKERHUB_PASSWORD }}' | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-          sudo docker pull futig/my-repo:latest
+          sudo docker pull '${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest'
           sudo docker stop my-container || true
           sudo docker rm my-container || true
-          sudo docker run -d --name my-container -p 5000:5000 ${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest
+          sudo docker run -d --name my-container -p 5000:5000 '${{ secrets.DOCKERHUB_USERNAME }}/my-repo:latest'
           EOF
       
